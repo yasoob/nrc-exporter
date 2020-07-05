@@ -1,10 +1,8 @@
-# NRC Exporter
-
-## Summary
+# :running: NRC Exporter
 
 Download your runs from Nike Run Club and convert them to GPX format that can be imported in other running apps.
 
-## Introduction
+## :page_with_curl: Introduction
 
 There was a time when I was a huge fan of Nike Run Club. It was the first running application I got hooked on when I started this sport. Later on down the road I realized that most of my new running friends were using Strava. I wanted to move my old runs from NRC to Strava but couldn't find a way to do it. Nike had recently removed the option to extract your data so I was stuck.
 
@@ -12,7 +10,7 @@ I did what any programmer would do. I spent a weekend trying to whip up a Nike R
 
 I have made this program in a modular way with helpful docstrings for all functions. You are more than welcome to add extra features you need in this program. If you aren't tech-savy and/or want my help please open up an issue and we can figure it out from there.
 
-## Installation
+## :wrench: Installation
 
 You can either install the package from [PyPI](https://pypi.org/project/nrc-exporter/) or [source](https://github.com/yasoob/nrc-exporter).
 
@@ -115,7 +113,7 @@ optional arguments:
                         A directory containing NRC activities in JSON format
 ```
 
-## Usage:
+## :rocket: Usage:
 
 You have multiple ways to run this application. You can either provide an email password combination, access tokens for Nike or a directory containing NRC activities in JSON format.
 
@@ -156,7 +154,7 @@ Now you can run `nrc_extractor` like this:
 $ nrc-exporter -i activities
 ```
 
-## Extracting access tokens
+## :heavy_dollar_sign: Extracting access tokens
 
 Nike uses Akamai Bot Manager which doesn't allow scripts to automatically log users in and extract the access tokens. Sometimes you might be lucky and automated token extraction works but mostly you will find the automated token extraction to be broken. Luckily, manually extracting the access token isn't too hard.
 
@@ -174,14 +172,14 @@ This should print your access tokens on screen. If this doesn't work and/or give
 
 Now copy these `access_tokens` and provide them to the program.
 
-## Limitations
+## :heavy_exclamation_mark: Limitations
 
 This was a weekend project so there are definitely a lot of rough edges to this script. Try it at your own risk. I have extracted my runs successfully with this program so I am hopeful that it will work for you too. In case it fails please open up an issue and I will take a look.
 
 For now, one major isssue is that the script does not correctly add elevation data to the GPX file. NRC provides us with the ascent and descent data of different runs but I am not sure of the math that is required to convert that into actual elevation data. This data wasn't particularly important for me to maintain for historic runs so I did not spend a lot of time on it. You are more than welcome to open up a PR if you know how to do it.
 
 
-## Screenshots
+## :camera: Screenshots
 
 Who doesn't love screenshots?
 
@@ -189,7 +187,7 @@ Who doesn't love screenshots?
 
 ![help message](https://raw.githubusercontent.com/yasoob/nrc-exporter/master/screenshots/help.png)
 
-## Release
+## :satellite: Release
 
 This is for my own documentation. There are three steps involved with releasing a new version to PyPI after updating the code.
 
@@ -206,7 +204,7 @@ python setup.py sdist bdist_wheel
 python -m twine upload --skip-existing --repository pypi dist/*
 ```
 
-## License
+## :scroll: License
 
 This program is distributed under the MIT license. You are more than welcome to take a look, modify and redistribute it (even for commercial purposes). Just make sure that the LICENSE file stays intact and you redistribute it under the same license.
 
