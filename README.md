@@ -29,6 +29,10 @@ $ cd nrc-exporter
 $ pip install -r requirements.txt
 ```
 
+- Add Geckodriver in path
+
+The automated access token extraction makes use of selenium and geckodriver. I used geckodriver instead of Chrome because Chrome (selenium) was being blocked by Nike (Akamai Bot Manager) but geckodriver was not. This is an optional step. If you want to try automated extraction make sure you have downloaded the geckodriver from [here](https://github.com/mozilla/geckodriver/releases) and the binary is in your PATH.
+
 - Run it:
 
 ```
