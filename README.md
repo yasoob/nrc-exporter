@@ -129,7 +129,7 @@ This method will probably be blocked by Nike in the near future. If it doesn't w
 
 - Access Tokens
 
-This is useful for when the program is unable to extract the tokens automatically. You will have to manually provide the access tokens to the program. If you don't know where to get the access tokens from, just run the program without any arguments and it should automatically open the URL where you can log in. For extracting the tokens from that page check out [these instructions](#extracting-access-tokens). Once you have the tokens, you can run nrc_extractor like this:
+This is useful for when the program is unable to extract the tokens automatically. You will have to manually provide the access tokens to the program. If you don't know where to get the access tokens from, just run the program without any arguments and it should automatically open the URL where you can log in. For extracting the tokens from that page check out [these instructions](#heavy_dollar_sign-extracting-access-tokens). Once you have the tokens, you can run nrc_extractor like this:
 
 ```
 $ nrc-exporter -i <access_token>
@@ -154,7 +154,7 @@ Now you can run `nrc_extractor` like this:
 $ nrc-exporter -i activities
 ```
 
-## :heavy_dollar_sign: Extracting access tokens {#extracting-access-tokens}
+## :heavy_dollar_sign: Extracting access tokens
 
 Nike uses Akamai Bot Manager which doesn't allow scripts to automatically log users in and extract the access tokens. Sometimes you might be lucky and automated token extraction works but mostly you will find the automated token extraction to be broken. Luckily, manually extracting the access token isn't too hard.
 
