@@ -154,7 +154,7 @@ Now you can run `nrc_extractor` like this:
 $ nrc-exporter -i activities
 ```
 
-## :heavy_dollar_sign: Extracting access tokens
+## :heavy_dollar_sign: Extracting access tokens {#extracting-access-tokens}
 
 Nike uses Akamai Bot Manager which doesn't allow scripts to automatically log users in and extract the access tokens. Sometimes you might be lucky and automated token extraction works but mostly you will find the automated token extraction to be broken. Luckily, manually extracting the access token isn't too hard.
 
