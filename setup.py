@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="nrc-exporter", # Replace with your own username
+    name="nrc-exporter",
     version="0.0.1",
     author="Yasoob Khalid",
     author_email="hi@yasoob.me",

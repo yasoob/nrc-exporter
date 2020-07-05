@@ -14,7 +14,7 @@ I have made this program in a modular way with helpful docstrings for all functi
 
 ## Installation
 
-You can install this program from GitHub. Just clone the repo, install the dependencies and run it.
+I am working on publishing this as a package on PyPI but till then you can install this program from GitHub. Just clone the repo, install the dependencies and run it.
 
 - Clone it:
 
