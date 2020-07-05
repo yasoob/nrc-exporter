@@ -71,7 +71,7 @@ def f_message(msg, level="info"):
     """
 
     color_map = {
-        "info": Fore.CYAN,
+        "info": Style.BRIGHT + Fore.CYAN,
         "error": Fore.RED,
         "debug": Fore.BLUE,
         "logo": Fore.YELLOW,
@@ -218,24 +218,27 @@ def get_access_token(options):
         access_token: the bearer token that will be used to extract activities
     """
 
-    info(f"🚗 Starting gecko webdriver")
-    driver = webdriver.Firefox(executable_path=options["gecko_path"])
-    driver.scopes = [
-        ".*nike.*",
-    ]
-    login_success = login(driver, options["email"], options["password"])
+    login_success = False
 
-    if options["debug"]:
-        debug(f"Saving screenshot from after login")
-        with open("website.png", "wb") as f:
-            f.write(driver.get_screenshot_as_png())
+    if options['gecko_path'] and not options['manual']:
+        info(f"🚗 Starting gecko webdriver")
+        driver = webdriver.Firefox(executable_path=options["gecko_path"])
+        driver.scopes = [
+            ".*nike.*",
+        ]
+        login_success = login(driver, options["email"], options["password"])
+
+        if options["debug"]:
+            debug(f"Saving screenshot from after login")
+            with open("website.png", "wb") as f:
+                f.write(driver.get_screenshot_as_png())
 
     if login_success:
         access_token = extract_token(driver)
     else:
         info(
             f"I will open your web browser and you will have to manually intercept the access tokens.\n"
-            f"    You can find more details on how to do this over here: \n"
+            f"    You can find more details on how to do this over here: https://git.io/nrc-exporter\n"
             f"    Press 'y' to open up the login url"
         )
         accept = input()
@@ -454,8 +457,8 @@ def get_gecko_path():
     if os.path.exists("geckodriver"):
         return os.path.join(os.getcwd(), "geckodriver")
     else:
-        error("Error: Gecko driver doesn't exist. Make sure it is in path")
-        sys.exit(1)
+        error("Gecko driver doesn't exist. I will not try to automatically extract access tokens")
+        return None
 
 
 def arg_parser():
@@ -489,6 +492,7 @@ def arg_parser():
 
     options = {}
     options["debug"] = args.verbose
+    options['manual'] = False
     if args.input:
         if os.path.exists(args.input):
             options["activities_dir"] = args.input
@@ -498,9 +502,11 @@ def arg_parser():
         options["email"] = args.email
         options["password"] = args.password
     else:
-        error("Error: Please pass in either the bearer token or email and password\n")
-        ap.print_help(sys.stderr)
-        sys.exit(1)
+        options['manual'] = True
+        info(
+            "You will have to manually provide the access tokens in a later step because you\n"
+            "     did not provide email/password or access tokens while running the program."
+        )
 
     return options
 
@@ -527,7 +533,6 @@ def init_logger():
     logging.getLogger("seleniumwire").propagate = False
 
     print(f_message(LOGO, level="logo"))
-    info("Starting NRC Exporter")
 
 
 def main():
@@ -537,9 +542,12 @@ def main():
 
     init_logger()
     options = arg_parser()
+
+    info("Starting NRC Exporter")
+
     start_time = time.time()
 
-    if options.get("email"):
+    if options.get("email") or options.get("manual"):
         info("💉  Email and password provided so will try to extract access tokens")
         options["gecko_path"] = get_gecko_path()
         options["access_token"] = get_access_token(options)

@@ -2,3 +2,5 @@ geckodriver.log
 activities/*
 gpx_output/*
 website.png
+
+.DS_Store
