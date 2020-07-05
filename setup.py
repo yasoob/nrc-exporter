@@ -3,12 +3,12 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open("requirements.txt", 'r') as fh:
+with open("requirements.txt", "r") as fh:
     REQUIRES = [line.strip() for line in fh.readlines()]
 
 setuptools.setup(
     name="nrc-exporter",
-    version="0.0.2",
+    version="0.0.4",
     author="Yasoob Khalid",
     author_email="hi@yasoob.me",
     description="This program allows you to export your runs from Nike Run Club and convert them in GPX format",
@@ -18,10 +18,10 @@ setuptools.setup(
     install_requires=REQUIRES,
     classifiers=[
         "Programming Language :: Python :: 3",
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: Implementation :: CPython',
+        "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],

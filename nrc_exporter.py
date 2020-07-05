@@ -24,9 +24,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 
-__version__ = '0.0.1'
-__author__ = 'Yasoob Khalid'
-__license__ = 'MIT'
+__version__ = "0.0.1"
+__author__ = "Yasoob Khalid"
+__license__ = "MIT"
 
 ACTIVITY_FOLDER = os.path.join(os.getcwd(), "activities")
 GPX_FOLDER = os.path.join(os.getcwd(), "gpx_output")

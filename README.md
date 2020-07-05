@@ -14,7 +14,52 @@ I have made this program in a modular way with helpful docstrings for all functi
 
 ## Installation
 
-I am working on publishing this as a package on PyPI but till then you can install this program from GitHub. Just clone the repo, install the dependencies and run it.
+You can either install the package from [PyPI](https://pypi.org/project/nrc-exporter/) or [source](https://github.com/yasoob/nrc-exporter).
+
+### Using pip
+
+The PyPI method is the easiest as it installs the dependencies as well (other than geckodriver). Run the following command to install from PyPI:
+
+```
+$ pip install nrc-exporter
+```
+
+If everything goes well, you should be able to run this command:
+
+```
+$ nrc-exporter --help
+
+  _   _ ____   ____                              _
+ | \ | |  _ \ / ___|   _____  ___ __   ___  _ __| |_ ___ _ __
+ |  \| | |_) | |      / _ \ \/ / '_ \ / _ \| '__| __/ _ \ '__|
+ | |\  |  _ <| |___  |  __/>  <| |_) | (_) | |  | ||  __/ |
+ |_| \_|_| \_\____|  \___/_/\_\ .__/ \___/|_|   \__\___|_|
+                               |_|
+
+                                            ~ Yasoob Khalid
+                                              https://yasoob.me
+
+
+usage: nrc-exporter [-h] [-e EMAIL] [-p PASSWORD] [-v] [-t TOKEN] [-i INPUT]
+
+Login to Nike Run Club and download activity data in GPX format
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -e EMAIL, --email EMAIL
+                        your nrc email
+  -p PASSWORD, --password PASSWORD
+                        your nrc password
+  -v, --verbose         print verbose output
+  -t TOKEN, --token TOKEN
+                        your nrc token
+  -i INPUT, --input INPUT
+                        A directory containing NRC activities in JSON format
+```
+
+### From Source
+
+Just clone the repo, install the dependencies and run it.
 
 - Clone it:
 
@@ -79,7 +124,7 @@ You have multiple ways to run this application. You can either provide an email 
 This is probably the easiest way to run the application. The program will try to automatically extract the access_tokens for NRC by logging you in using Selenium and intercepting the requests. You will have to run nrc_exporter like this:
 
 ```
-python nrc_exporter.py -e yasoob@example.com -p sample_password
+$ nrc-exporter -e yasoob@example.com -p sample_password
 ```
 
 This method will probably be blocked by Nike in the near future. If it doesn't work use the access tokens method described below.
@@ -89,7 +134,7 @@ This method will probably be blocked by Nike in the near future. If it doesn't w
 This is useful for when the program is unable to extract the tokens automatically. You will have to manually provide the access tokens to the program. If you don't know where to get the access tokens from, just run the program without any arguments and it should automatically open the URL where you can log in. For extracting the tokens from that page check out [these instructions](#extracting-access-tokens). Once you have the tokens, you can run nrc_extractor like this:
 
 ```
-python nrc_exporter.py -i <access_token>
+$ nrc-exporter -i <access_token>
 ```
 
 - Activities folder
@@ -108,7 +153,7 @@ activities
 Now you can run `nrc_extractor` like this:
 
 ```
-$ python nrc_exporter.py -i activities
+$ nrc-exporter -i activities
 ```
 
 ## Extracting access tokens
@@ -143,6 +188,23 @@ Who doesn't love screenshots?
 - Initial run
 
 ![help message](https://raw.githubusercontent.com/yasoob/nrc-exporter/master/screenshots/help.png)
+
+## Release
+
+This is for my own documentation. There are three steps involved with releasing a new version to PyPI after updating the code.
+
+- Increment the version number in `setup.py`
+- Build the distribution package
+
+```
+python setup.py sdist bdist_wheel
+```
+
+- Upload to PyPI:
+
+```
+python -m twine upload --skip-existing --repository pypi dist/*
+```
 
 ## License
 
