@@ -132,7 +132,7 @@ This method will probably be blocked by Nike in the near future. If it doesn't w
 This is useful for when the program is unable to extract the tokens automatically. You will have to manually provide the access tokens to the program. If you don't know where to get the access tokens from, just run the program without any arguments and it should automatically open the URL where you can log in. For extracting the tokens from that page check out [these instructions](#heavy_dollar_sign-extracting-access-tokens). Once you have the tokens, you can run nrc_extractor like this:
 
 ```
-$ nrc-exporter -i <access_token>
+$ nrc-exporter -t <access_token>
 ```
 
 - Activities folder
