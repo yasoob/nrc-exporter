@@ -36,7 +36,7 @@ The automated access token extraction makes use of selenium and geckodriver. I u
 - Run it:
 
 ```
-python -m nrc_exporter --help
+python nrc_exporter.py --help
 ```
 
 If everything goes well you will see the following text:
@@ -79,7 +79,7 @@ You have multiple ways to run this application. You can either provide an email 
 This is probably the easiest way to run the application. The program will try to automatically extract the access_tokens for NRC by logging you in using Selenium and intercepting the requests. You will have to run nrc_exporter like this:
 
 ```
-python -m nrc_exporter -e yasoob@example.com -p sample_password
+python nrc_exporter.py -e yasoob@example.com -p sample_password
 ```
 
 This method will probably be blocked by Nike in the near future. If it doesn't work use the access tokens method described below.
@@ -89,7 +89,7 @@ This method will probably be blocked by Nike in the near future. If it doesn't w
 This is useful for when the program is unable to extract the tokens automatically. You will have to manually provide the access tokens to the program. If you don't know where to get the access tokens from, just run the program without any arguments and it should automatically open the URL where you can log in. For extracting the tokens from that page check out [these instructions](#extracting-access-tokens). Once you have the tokens, you can run nrc_extractor like this:
 
 ```
-python -m nrc_extractor -i <access_token>
+python nrc_exporter.py -i <access_token>
 ```
 
 - Activities folder
@@ -108,7 +108,7 @@ activities
 Now you can run `nrc_extractor` like this:
 
 ```
-$ python -m nrc_extractor -i activities
+$ python nrc_exporter.py -i activities
 ```
 
 ## Extracting access tokens
@@ -125,7 +125,7 @@ JSON.parse(window.localStorage.getItem('com.nike.commerce.snkrs.web.credential')
 
 This should print your access tokens on screen. If this doesn't work and/or gives you errors, just click on storage and check out local storage. You should be able to `access_tokens` as part of the value for a particular key. It should look something like this:
 
-![Extract key](screenshots/token_extraction.png)
+![Extract key](https://raw.githubusercontent.com/yasoob/nrc-exporter/master/screenshots/token_extraction.png)
 
 Now copy these `access_tokens` and provide them to the program.
 
@@ -142,7 +142,7 @@ Who doesn't love screenshots?
 
 - Initial run
 
-![help message](screenshots/help.png)
+![help message](https://raw.githubusercontent.com/yasoob/nrc-exporter/master/screenshots/help.png)
 
 ## License
 

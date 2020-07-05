@@ -2,5 +2,7 @@ geckodriver.log
 activities/*
 gpx_output/*
 website.png
-
+build/*
+dist/*
+*.egg-info/*
 .DS_Store

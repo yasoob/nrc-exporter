@@ -1,5 +1,12 @@
-#! /bin/python
-
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+    nrc_exporter
+    ~~~~~~~~~~~~
+    A program to export and convert NRC activities to GPX.
+    :copyright: (c) 2020 by Yasoob Khalid.
+    :license: MIT, see LICENSE for more details.
+"""
 import os
 import sys
 import time
@@ -16,6 +23,10 @@ from seleniumwire import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
+
+__version__ = '0.0.1'
+__author__ = 'Yasoob Khalid'
+__license__ = 'MIT'
 
 ACTIVITY_FOLDER = os.path.join(os.getcwd(), "activities")
 GPX_FOLDER = os.path.join(os.getcwd(), "gpx_output")
@@ -220,7 +231,7 @@ def get_access_token(options):
 
     login_success = False
 
-    if options['gecko_path'] and not options['manual']:
+    if options["gecko_path"] and not options["manual"]:
         info(f"🚗 Starting gecko webdriver")
         driver = webdriver.Firefox(executable_path=options["gecko_path"])
         driver.scopes = [
@@ -242,10 +253,10 @@ def get_access_token(options):
             f"    Press 'y' to open up the login url"
         )
         accept = input()
-        if not accept == 'y':
+        if not accept == "y":
             info("You didn't want to continue. Exiting")
             sys.exit(0)
-        
+
         webbrowser.open_new_tab(MOBILE_LOGIN_URL)
         info(f"Please paste access tokens here: \n")
         access_token = input()
@@ -425,7 +436,7 @@ def parse_activity_data(activity):
     if ascent_index:
         elevation_data = activity["metrics"][ascent_index]["values"]
     title = activity["tags"].get("com.nike.name")
-    
+
     gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data)
     info(f"✔ Activity {activity['id']} successfully parsed")
     return gpx_doc
@@ -457,7 +468,9 @@ def get_gecko_path():
     if os.path.exists("geckodriver"):
         return os.path.join(os.getcwd(), "geckodriver")
     else:
-        error("Gecko driver doesn't exist. I will not try to automatically extract access tokens")
+        error(
+            "Gecko driver doesn't exist. I will not try to automatically extract access tokens"
+        )
         return None
 
 
@@ -492,7 +505,7 @@ def arg_parser():
 
     options = {}
     options["debug"] = args.verbose
-    options['manual'] = False
+    options["manual"] = False
     if args.input:
         if os.path.exists(args.input):
             options["activities_dir"] = args.input
@@ -502,7 +515,7 @@ def arg_parser():
         options["email"] = args.email
         options["password"] = args.password
     else:
-        options['manual'] = True
+        options["manual"] = True
         info(
             "You will have to manually provide the access tokens in a later step because you\n"
             "     did not provide email/password or access tokens while running the program."
@@ -556,12 +569,12 @@ def main():
         activity_ids = get_activities_list(options)
         for activity in activity_ids:
             activity_details = get_activity_details(activity, options)
-            save_activity(activity_details, activity_details['id'])
+            save_activity(activity_details, activity_details["id"])
 
     activity_folder = options.get("activities_dir", ACTIVITY_FOLDER)
     activity_files = os.listdir(activity_folder)
     info(f"Parsing activity JSON files from the {activity_folder} folder")
-    
+
     total_parsed_count = 0
     for file in activity_files:
         file_location = os.path.join(activity_folder, file)
@@ -574,9 +587,13 @@ def main():
         if parsed_data:
             total_parsed_count += 1
             save_gpx(parsed_data, json_data["id"])
-    
-    info(f"Parsed {total_parsed_count} activities successfully out of {len(activity_files)} total run activities")
-    info(f"Total time taken: {time.strftime('%H:%M:%S', time.gmtime(time.time() - start_time))}")
+
+    info(
+        f"Parsed {total_parsed_count} activities successfully out of {len(activity_files)} total run activities"
+    )
+    info(
+        f"Total time taken: {time.strftime('%H:%M:%S', time.gmtime(time.time() - start_time))}"
+    )
 
 
 if __name__ == "__main__":

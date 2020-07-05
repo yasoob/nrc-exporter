@@ -1,0 +1,5 @@
+colorama==0.4.3
+gpxpy==1.4.2
+requests==2.24.0
+selenium==3.141.0
+selenium-wire==1.2.3
