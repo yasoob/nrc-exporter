@@ -113,7 +113,7 @@ optional arguments:
                         A directory containing NRC activities in JSON format
 ```
 
-## :rocket: Usage:
+## :rocket: Usage
 
 You have multiple ways to run this application. You can either provide an email password combination, access tokens for Nike or a directory containing NRC activities in JSON format.
 
