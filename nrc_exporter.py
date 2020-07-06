@@ -376,7 +376,7 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data):
         if lat["start_epoch_ms"] != lon["start_epoch_ms"]:
             error(f"\tThe latitude and longitude data is out of order")
 
-        d_time = datetime.datetime.fromtimestamp(lat["start_epoch_ms"] / 1000)
+        d_time = datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)
         if elevation_data:
             while lat["start_epoch_ms"] > elevation_data[counter]["end_epoch_ms"]:
                 if counter == len(elevation_data) - 1:
