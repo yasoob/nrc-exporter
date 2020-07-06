@@ -1,6 +1,6 @@
 # :running: NRC Exporter
 
-Download your runs from Nike Run Club and convert them to GPX format that can be imported in other running apps.
+Download your runs from Nike Run Club and convert them to GPX format that can be imported in other running apps. I wrote an article about how I reverse engineered the NRC APK [at my blog](https://yasoob.me/posts/reverse-engineering-nike-run-club-using-frida-android/). You might find it a fun read if you are into that sort of stuff.
 
 ## :page_with_curl: Introduction
 
