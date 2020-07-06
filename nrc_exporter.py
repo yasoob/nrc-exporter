@@ -8,6 +8,7 @@
     :license: MIT, see LICENSE for more details.
 """
 import os
+from xml.etree import ElementTree
 import sys
 import time
 import requests
@@ -348,7 +349,7 @@ def save_activity(activity_json, activity_id):
         f.write(json.dumps(activity_json))
 
 
-def generate_gpx(title, latitude_data, longitude_data, elevation_data):
+def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data):
     """
     Parses the latitude, longitude and elevation data to generate a GPX document
 
@@ -363,6 +364,7 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data):
     """
 
     gpx = gpxpy.gpx.GPX()
+    gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
     gpx_track = gpxpy.gpx.GPXTrack()
     gpx_track.name = title
     gpx.tracks.append(gpx_track)
@@ -371,30 +373,55 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data):
     gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_track.segments.append(gpx_segment)
 
-    counter = 0
+    points_dict_list = []
+
+    def update_points(points, update_data, update_name):
+        """
+        Update the points dict list so that can easy create GPXTrackPoint
+
+        Args:
+            points: basic points list
+            update_data: attr to update points which is a list
+            update_name: attr name
+
+        Returns:
+            None (just update the points list)
+        """
+        counter = 0
+        for p in points:
+            while p["start_time"] >= update_data[counter]["end_epoch_ms"]:
+                if counter == len(update_data) - 1:
+                    break
+                p[update_name] = update_data[counter]["value"]
+                counter += 1
+
+
     for lat, lon in zip(latitude_data, longitude_data):
         if lat["start_epoch_ms"] != lon["start_epoch_ms"]:
             error(f"\tThe latitude and longitude data is out of order")
 
-        d_time = datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)
-        if elevation_data:
-            while lat["start_epoch_ms"] > elevation_data[counter]["end_epoch_ms"]:
-                if counter == len(elevation_data) - 1:
-                    break
-                counter += 1
-            gpx_segment.points.append(
-                gpxpy.gpx.GPXTrackPoint(
-                    lat["value"],
-                    lon["value"],
-                    time=d_time,
-                    elevation=elevation_data[counter]["value"],
-                )
-            )
-        else:
-            gpx_segment.points.append(
-                gpxpy.gpx.GPXTrackPoint(lat["value"], lon["value"], time=d_time)
-            )
+        points_dict_list.append({"latitude": lat["value"], "longitude": lon["value"], "start_time":  lat["start_epoch_ms"], "time": datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)})
 
+    if elevation_data:
+        update_points(points_dict_list, elevation_data, "elevation")
+    if heart_rate_data:
+        update_points(points_dict_list, heart_rate_data, "heart_rate")
+
+    for p in points_dict_list:
+        # delete useless attr
+        del p["start_time"]
+        if p.get("heart_rate") is None:
+           point = gpxpy.gpx.GPXTrackPoint(**p)
+        else:
+            heart_rate_num = p.pop("heart_rate")
+            point = gpxpy.gpx.GPXTrackPoint(**p)
+            gpx_extension_hr = ElementTree.fromstring(f"""<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+                <gpxtpx:hr>{heart_rate_num}</gpxtpx:hr>
+                </gpxtpx:TrackPointExtension>
+            """)
+            point.extensions.append(gpx_extension_hr)
+        gpx_segment.points.append(point)
+        
     return gpx.to_xml()
 
 
@@ -413,6 +440,7 @@ def parse_activity_data(activity):
     lat_index = None
     lon_index = None
     ascent_index = None
+    heart_rate_index = None
     for i, metric in enumerate(activity["metrics"]):
         if metric["type"] == "latitude":
             lat_index = i
@@ -420,6 +448,8 @@ def parse_activity_data(activity):
             lon_index = i
         if metric["type"] == "ascent":
             ascent_index = i
+        if metric["type"] == "heart_rate":
+            heart_rate_index = i
 
     debug(
         f"\tActivity {activity['id']} contains the following metrics: {activity['metric_types']}"
@@ -433,11 +463,15 @@ def parse_activity_data(activity):
     latitude_data = activity["metrics"][lat_index]["values"]
     longitude_data = activity["metrics"][lon_index]["values"]
     elevation_data = None
+    heart_rate_data = None
     if ascent_index:
         elevation_data = activity["metrics"][ascent_index]["values"]
+    if heart_rate_index:
+        heart_rate_data = activity["metrics"][heart_rate_index]["values"]
+
     title = activity["tags"].get("com.nike.name")
 
-    gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data)
+    gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data)
     info(f"✔ Activity {activity['id']} successfully parsed")
     return gpx_doc
 
