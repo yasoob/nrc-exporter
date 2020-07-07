@@ -202,7 +202,7 @@ def extract_token(driver):
 
     Args:
         driver: the webdriver instance that was used to do the login
-    
+
     Returns:
         access_token: the token extracted from request
     """
@@ -225,7 +225,7 @@ def get_access_token(options):
 
     Args:
         options: the options dict which contains login info
-    
+
     Returns:
         access_token: the bearer token that will be used to extract activities
     """
@@ -421,7 +421,7 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rat
             """)
             point.extensions.append(gpx_extension_hr)
         gpx_segment.points.append(point)
-        
+
     return gpx.to_xml()
 
 
@@ -431,7 +431,7 @@ def parse_activity_data(activity):
 
     Args:
         activity: a json document for a NRC activity
-    
+
     Returns:
         gpx: the GPX XML doc for the input activity
     """
@@ -482,7 +482,7 @@ def save_gpx(gpx_data, activity_id):
 
     Args:
         gpx_data: the GPX XML doc
-        activity_id: the name of the file 
+        activity_id: the name of the file
     """
 
     file_path = os.path.join(GPX_FOLDER, activity_id + ".gpx")
@@ -524,7 +524,7 @@ def arg_parser():
     ap.add_argument("-v", "--verbose", action="store_true", help="print verbose output")
     ap.add_argument("-t", "--token", help="your nrc token", required=False)
     ap.add_argument(
-        "-i", "--input", help="A directory containing NRC activities in JSON format"
+        "-i", "--input", nargs='+', help="A directory containing NRC activities in JSON format or NRC JSON files"
     )
     args = ap.parse_args()
 
@@ -541,8 +541,10 @@ def arg_parser():
     options["debug"] = args.verbose
     options["manual"] = False
     if args.input:
-        if os.path.exists(args.input):
-            options["activities_dir"] = args.input
+        if all([os.path.exists(i) for i in args.input]):
+            options["activities_dirs"] = args.input
+        if all([i.endswith(".json") for i in args.input]):
+            options["activities_files"] = args.input
     elif args.token:
         options["access_token"] = args.token
     elif args.email and args.password:
@@ -605,14 +607,17 @@ def main():
             activity_details = get_activity_details(activity, options)
             save_activity(activity_details, activity_details["id"])
 
-    activity_folder = options.get("activities_dir", ACTIVITY_FOLDER)
-    activity_files = os.listdir(activity_folder)
-    info(f"Parsing activity JSON files from the {activity_folder} folder")
+    activity_folders = options.get("activities_dirs", [ACTIVITY_FOLDER])
+    activity_files = options.get("activities_files", [])
+    if not activity_files:
+        for folder in activity_folders:
+            # add path to every file in folder
+            activity_files.extend([os.path.join(folder, f) for f in os.listdir(folder)])
+        info(f"Parsing activity JSON files from the {','.join(activity_folders)} folders")
 
     total_parsed_count = 0
     for file in activity_files:
-        file_location = os.path.join(activity_folder, file)
-        with open(file_location, "r") as f:
+        with open(file, "r") as f:
             try:
                 json_data = json.loads(f.read())
             except JSONDecodeError:
