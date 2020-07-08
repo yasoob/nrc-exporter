@@ -162,7 +162,7 @@ $ nrc-exporter -i 07e1fa42-a9a9-4626-bbef-60269dc4a111.json 01a09869-0a95-49f2-b
 
 Nike uses Akamai Bot Manager which doesn't allow scripts to automatically log users in and extract the access tokens. Sometimes you might be lucky and automated token extraction works but mostly you will find the automated token extraction to be broken. Luckily, manually extracting the access token isn't too hard.
 
-Just open up your favorite browser and head over to this [login url](https://unite.nike.com/s3/unite/mobile.html?androidSDKVersion=3.1.0&corsoverride=https://unite.nike.com&uxid=com.nike.sport.running.droid.3.8&locale=en_US&backendEnvironment=identity&view=login&clientId=WLr1eIG5JSNNcBJM3npVa6L76MK8OBTt&facebookAppId=84697719333&wechatAppId=wxde7d0246cfaf32f7) and log in.
+Just open up your favorite browser, open developer tools, and head over to this [login url](https://unite.nike.com/s3/unite/mobile.html?androidSDKVersion=3.1.0&corsoverride=https://unite.nike.com&uxid=com.nike.sport.running.droid.3.8&locale=en_US&backendEnvironment=identity&view=login&clientId=WLr1eIG5JSNNcBJM3npVa6L76MK8OBTt&facebookAppId=84697719333&wechatAppId=wxde7d0246cfaf32f7) and log in.
 
 Submitting the form will not do much. You will just have a blank page in front of you but you will be logged in. Now in order to extract the access tokens, open up developer tools. You can search online about how to open the developer tools for your specific browser. Once the developer tools are open, click on the `Console` and type this:
 
@@ -173,6 +173,15 @@ JSON.parse(window.localStorage.getItem('com.nike.commerce.snkrs.web.credential')
 This should print your access tokens on screen. If this doesn't work and/or gives you errors, just click on storage and check out local storage. You should be able to `access_tokens` as part of the value for a particular key. It should look something like this:
 
 ![Extract key](https://raw.githubusercontent.com/yasoob/nrc-exporter/master/screenshots/token_extraction.png)
+
+If the local storage doesn't contain any access tokens, then go to the "network" tab in the developer tools. A couple of requests should be visible there assuming you logged in after opening the developer tools:
+
+![image](https://user-images.githubusercontent.com/3696393/86953188-0f6be700-c122-11ea-8140-9c1ff135632f.png)
+
+Click on the `/login` request and check the response. It will contain the required `access_token`:
+
+![image](https://user-images.githubusercontent.com/3696393/86953412-696cac80-c122-11ea-851e-a1516f5e302f.png)
+
 
 Now copy these `access_tokens` and provide them to the program.
 
