@@ -8,6 +8,7 @@
     :license: MIT, see LICENSE for more details.
 """
 import os
+from xml.etree import ElementTree
 import sys
 import time
 import requests
@@ -201,7 +202,7 @@ def extract_token(driver):
 
     Args:
         driver: the webdriver instance that was used to do the login
-    
+
     Returns:
         access_token: the token extracted from request
     """
@@ -224,7 +225,7 @@ def get_access_token(options):
 
     Args:
         options: the options dict which contains login info
-    
+
     Returns:
         access_token: the bearer token that will be used to extract activities
     """
@@ -348,7 +349,7 @@ def save_activity(activity_json, activity_id):
         f.write(json.dumps(activity_json))
 
 
-def generate_gpx(title, latitude_data, longitude_data, elevation_data):
+def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data):
     """
     Parses the latitude, longitude and elevation data to generate a GPX document
 
@@ -363,6 +364,7 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data):
     """
 
     gpx = gpxpy.gpx.GPX()
+    gpx.nsmap["gpxtpx"] = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
     gpx_track = gpxpy.gpx.GPXTrack()
     gpx_track.name = title
     gpx.tracks.append(gpx_track)
@@ -371,29 +373,59 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data):
     gpx_segment = gpxpy.gpx.GPXTrackSegment()
     gpx_track.segments.append(gpx_segment)
 
-    counter = 0
+    points_dict_list = []
+
+    def update_points(points, update_data, update_name):
+        """
+        Update the points dict list so that can easy create GPXTrackPoint
+
+        Args:
+            points: basic points list
+            update_data: attr to update points which is a list
+            update_name: attr name
+
+        Returns:
+            None (just update the points list)
+        """
+        counter = 0
+        for p in points:
+            while p["start_time"] >= update_data[counter]["end_epoch_ms"]:
+                if counter == len(update_data) - 1:
+                    break
+                p[update_name] = update_data[counter]["value"]
+                counter += 1
+
+
     for lat, lon in zip(latitude_data, longitude_data):
         if lat["start_epoch_ms"] != lon["start_epoch_ms"]:
             error(f"\tThe latitude and longitude data is out of order")
 
-        d_time = datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)
-        if elevation_data:
-            while lat["start_epoch_ms"] > elevation_data[counter]["end_epoch_ms"]:
-                if counter == len(elevation_data) - 1:
-                    break
-                counter += 1
-            gpx_segment.points.append(
-                gpxpy.gpx.GPXTrackPoint(
-                    lat["value"],
-                    lon["value"],
-                    time=d_time,
-                    elevation=elevation_data[counter]["value"],
-                )
-            )
+        points_dict_list.append({
+            "latitude": lat["value"],
+            "longitude": lon["value"],
+            "start_time":  lat["start_epoch_ms"],
+            "time": datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)
+            })
+
+    if elevation_data:
+        update_points(points_dict_list, elevation_data, "elevation")
+    if heart_rate_data:
+        update_points(points_dict_list, heart_rate_data, "heart_rate")
+
+    for p in points_dict_list:
+        # delete useless attr
+        del p["start_time"]
+        if p.get("heart_rate") is None:
+           point = gpxpy.gpx.GPXTrackPoint(**p)
         else:
-            gpx_segment.points.append(
-                gpxpy.gpx.GPXTrackPoint(lat["value"], lon["value"], time=d_time)
-            )
+            heart_rate_num = p.pop("heart_rate")
+            point = gpxpy.gpx.GPXTrackPoint(**p)
+            gpx_extension_hr = ElementTree.fromstring(f"""<gpxtpx:TrackPointExtension xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
+                <gpxtpx:hr>{heart_rate_num}</gpxtpx:hr>
+                </gpxtpx:TrackPointExtension>
+            """)
+            point.extensions.append(gpx_extension_hr)
+        gpx_segment.points.append(point)
 
     return gpx.to_xml()
 
@@ -404,7 +436,7 @@ def parse_activity_data(activity):
 
     Args:
         activity: a json document for a NRC activity
-    
+
     Returns:
         gpx: the GPX XML doc for the input activity
     """
@@ -413,6 +445,7 @@ def parse_activity_data(activity):
     lat_index = None
     lon_index = None
     ascent_index = None
+    heart_rate_index = None
     for i, metric in enumerate(activity["metrics"]):
         if metric["type"] == "latitude":
             lat_index = i
@@ -420,6 +453,8 @@ def parse_activity_data(activity):
             lon_index = i
         if metric["type"] == "ascent":
             ascent_index = i
+        if metric["type"] == "heart_rate":
+            heart_rate_index = i
 
     debug(
         f"\tActivity {activity['id']} contains the following metrics: {activity['metric_types']}"
@@ -433,11 +468,15 @@ def parse_activity_data(activity):
     latitude_data = activity["metrics"][lat_index]["values"]
     longitude_data = activity["metrics"][lon_index]["values"]
     elevation_data = None
+    heart_rate_data = None
     if ascent_index:
         elevation_data = activity["metrics"][ascent_index]["values"]
+    if heart_rate_index:
+        heart_rate_data = activity["metrics"][heart_rate_index]["values"]
+
     title = activity["tags"].get("com.nike.name")
 
-    gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data)
+    gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data)
     info(f"✔ Activity {activity['id']} successfully parsed")
     return gpx_doc
 
@@ -448,7 +487,7 @@ def save_gpx(gpx_data, activity_id):
 
     Args:
         gpx_data: the GPX XML doc
-        activity_id: the name of the file 
+        activity_id: the name of the file
     """
 
     file_path = os.path.join(GPX_FOLDER, activity_id + ".gpx")
@@ -490,7 +529,8 @@ def arg_parser():
     ap.add_argument("-v", "--verbose", action="store_true", help="print verbose output")
     ap.add_argument("-t", "--token", help="your nrc token", required=False)
     ap.add_argument(
-        "-i", "--input", help="A directory containing NRC activities in JSON format"
+        "-i", "--input", nargs='+', help="A directory or directories containing NRC activities in JSON format."
+        "You can also provide individual NRC JSON files"
     )
     args = ap.parse_args()
 
@@ -507,8 +547,10 @@ def arg_parser():
     options["debug"] = args.verbose
     options["manual"] = False
     if args.input:
-        if os.path.exists(args.input):
-            options["activities_dir"] = args.input
+        if all([os.path.exists(i) for i in args.input]):
+            options["activities_dirs"] = args.input
+        if all([i.endswith(".json") for i in args.input]):
+            options["activities_files"] = args.input
     elif args.token:
         options["access_token"] = args.token
     elif args.email and args.password:
@@ -571,14 +613,17 @@ def main():
             activity_details = get_activity_details(activity, options)
             save_activity(activity_details, activity_details["id"])
 
-    activity_folder = options.get("activities_dir", ACTIVITY_FOLDER)
-    activity_files = os.listdir(activity_folder)
-    info(f"Parsing activity JSON files from the {activity_folder} folder")
+    activity_folders = options.get("activities_dirs", [ACTIVITY_FOLDER])
+    activity_files = options.get("activities_files", [])
+    if not activity_files:
+        for folder in activity_folders:
+            # add path to every file in folder
+            activity_files.extend([os.path.join(folder, f) for f in os.listdir(folder)])
+        info(f"Parsing activity JSON files from the {','.join(activity_folders)} folders")
 
     total_parsed_count = 0
     for file in activity_files:
-        file_location = os.path.join(activity_folder, file)
-        with open(file_location, "r") as f:
+        with open(file, "r") as f:
             try:
                 json_data = json.loads(f.read())
             except JSONDecodeError:
