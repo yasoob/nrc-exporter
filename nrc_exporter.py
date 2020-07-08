@@ -400,7 +400,12 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rat
         if lat["start_epoch_ms"] != lon["start_epoch_ms"]:
             error(f"\tThe latitude and longitude data is out of order")
 
-        points_dict_list.append({"latitude": lat["value"], "longitude": lon["value"], "start_time":  lat["start_epoch_ms"], "time": datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)})
+        points_dict_list.append({
+            "latitude": lat["value"],
+            "longitude": lon["value"],
+            "start_time":  lat["start_epoch_ms"],
+            "time": datetime.datetime.utcfromtimestamp(lat["start_epoch_ms"] / 1000)
+            })
 
     if elevation_data:
         update_points(points_dict_list, elevation_data, "elevation")
@@ -524,7 +529,8 @@ def arg_parser():
     ap.add_argument("-v", "--verbose", action="store_true", help="print verbose output")
     ap.add_argument("-t", "--token", help="your nrc token", required=False)
     ap.add_argument(
-        "-i", "--input", nargs='+', help="A directory containing NRC activities in JSON format or NRC JSON files"
+        "-i", "--input", nargs='+', help="A directory or directories containing NRC activities in JSON format."
+        "You can also provide individual NRC JSON files"
     )
     args = ap.parse_args()
 
