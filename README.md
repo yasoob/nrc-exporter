@@ -51,8 +51,10 @@ optional arguments:
   -v, --verbose         print verbose output
   -t TOKEN, --token TOKEN
                         your nrc token
-  -i INPUT, --input INPUT
-                        A directory containing NRC activities in JSON format
+  -i INPUT [INPUT ...], --input INPUT [INPUT ...]
+                        A directory or directories containing NRC activities
+                        in JSON format.You can also provide individual NRC
+                        JSON files
 ```
 
 ### From Source
@@ -152,6 +154,8 @@ Now you can run `nrc_extractor` like this:
 
 ```
 $ nrc-exporter -i activities
+or 
+$ nrc-exporter -i 07e1fa42-a9a9-4626-bbef-60269dc4a111.json 01a09869-0a95-49f2-bd84-75065b701c33.json
 ```
 
 ## :heavy_dollar_sign: Extracting access tokens
