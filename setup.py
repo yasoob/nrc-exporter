@@ -8,7 +8,7 @@ with open("requirements.txt", "r") as fh:
 
 setuptools.setup(
     name="nrc-exporter",
-    version="0.0.5",
+    version="0.0.7",
     author="Yasoob Khalid",
     author_email="hi@yasoob.me",
     description="This program allows you to export your runs from Nike Run Club and convert them to GPX format",
