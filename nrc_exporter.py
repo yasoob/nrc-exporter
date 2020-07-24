@@ -303,10 +303,10 @@ def get_activities_list(options):
             error("Are you sure you provided the correct access token?")
             sys.exit()
         for activity in activity_list.json()["activities"]:
-            debug(f"Entry type: {activity['tags'].get('com.nike.running.runtype', '')}")
+            debug(f"Entry type: {activity.get('tags', {}).get('com.nike.running.runtype', 'unknow type')}")
             if (
                 activity["type"] == "run"
-                and activity["tags"].get("com.nike.running.runtype", "") != "manual"
+                and activity.get("tags", {}).get("com.nike.running.runtype", "") != "manual"
             ):
                 # activity["tags"]["location"].lower() == "outdoors":
                 activity_ids.append(activity.get("id"))
@@ -343,7 +343,7 @@ def get_activity_details(activity_id, options):
 
 def save_activity(activity_json, activity_id):
     debug(f"Saving {activity_id}.json to disk")
-    title = activity_json.get("tags").get("com.nike.name")
+    title = activity_json.get("tags", {}).get("com.nike.name", "")
     json_path = os.path.join(ACTIVITY_FOLDER, f"{activity_id}.json")
     with open(json_path, "w") as f:
         f.write(json.dumps(activity_json))
@@ -474,7 +474,7 @@ def parse_activity_data(activity):
     if heart_rate_index:
         heart_rate_data = activity["metrics"][heart_rate_index]["values"]
 
-    title = activity["tags"].get("com.nike.name")
+    title = activity.get("tags", {}).get("com.nike.name", "")
 
     gpx_doc = generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data)
     info(f"✔ Activity {activity['id']} successfully parsed")
