@@ -622,12 +622,13 @@ def main():
         info(f"Parsing activity JSON files from the {','.join(activity_folders)} folders")
 
     total_parsed_count = 0
-    for file in activity_files:
-        with open(file, "r") as f:
+    for file_path in activity_files:
+        with open(file_path, "r") as f:
             try:
                 json_data = json.loads(f.read())
             except JSONDecodeError:
-                error(f"Error occured while parsing file {file_location}")
+                error(f"Error occured while parsing file {file_path}")
+        debug(f"Parsing file: {file_path}")
         parsed_data = parse_activity_data(json_data)
         if parsed_data:
             total_parsed_count += 1
