@@ -446,6 +446,11 @@ def parse_activity_data(activity):
     lon_index = None
     ascent_index = None
     heart_rate_index = None
+    if not activity.get("metrics"):
+        warning(
+            f"\tThe activity {activity['id']} doesn't contain metrics information"
+        )
+        return None
     for i, metric in enumerate(activity["metrics"]):
         if metric["type"] == "latitude":
             lat_index = i
