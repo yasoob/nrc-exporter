@@ -167,7 +167,7 @@ Just open up your favorite browser, open developer tools, and head over to this 
 Submitting the form will not do much. You will just have a blank page in front of you but you will be logged in. Now in order to extract the access tokens, open up developer tools. You can search online about how to open the developer tools for your specific browser. Once the developer tools are open, click on the `Console` and type this:
 
 ```
-JSON.parse(window.localStorage.getItem('com.nike.commerce.snkrs.web.credential')).access_token
+JSON.parse(window.localStorage.getItem('com.nike.commerce.nikedotcom.web.credential')).access_token
 ```
 
 This should print your access tokens on screen. If this doesn't work and/or gives you errors, just click on storage and check out local storage. You should be able to `access_tokens` as part of the value for a particular key. It should look something like this:
