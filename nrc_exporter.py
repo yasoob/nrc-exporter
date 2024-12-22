@@ -39,9 +39,9 @@ MOBILE_LOGIN_URL = (
     "&clientId=WLr1eIG5JSNNcBJM3npVa6L76MK8OBTt&facebookAppId=84697719333"
     "&wechatAppId=wxde7d0246cfaf32f7"
 )
-ACTIVITY_LIST_URL = "https://api.nike.com/sport/v3/me/activities/after_time/0"
+ACTIVITY_LIST_URL = "https://api.nike.com/plus/v3/activities/before_id/v3/*?limit=30&types=run%2Cjogging&include_deleted=false"
 ACTIVITY_LIST_PAGINATION = (
-    "https://api.nike.com/sport/v3/me/activities/after_id/{after_id}"
+    "https://api.nike.com/plus/v3/activities/before_id/v3/{before_id}?limit=30&types=run%2Cjogging&include_deleted=false"
 )
 ACTIVITY_DETAILS_URL = (
     "https://api.nike.com/sport/v3/me/activity/{activity_id}?metrics=ALL"
@@ -311,10 +311,10 @@ def get_activities_list(options):
                 # activity["tags"]["location"].lower() == "outdoors":
                 activity_ids.append(activity.get("id"))
 
-        if activity_list.json()["paging"].get("after_id"):
+        if activity_list.json()["paging"].get("before_id"):
             page_num += 1
             next_page = ACTIVITY_LIST_PAGINATION.format(
-                after_id=activity_list.json()["paging"]["after_id"]
+                before_id=activity_list.json()["paging"]["before_id"]
             )
             continue
         break
