@@ -8,16 +8,19 @@
     :license: MIT, see LICENSE for more details.
 """
 import os
+import glob
 from xml.etree import ElementTree
 import sys
 import time
 import requests
+from urllib3.util.retry import Retry
 import argparse
 import webbrowser
 import logging
 import gpxpy.gpx
 import json
 from json.decoder import JSONDecodeError
+from concurrent.futures import ThreadPoolExecutor
 import datetime
 from colorama import Fore, Style
 from seleniumwire import webdriver
@@ -39,6 +42,19 @@ ACTIVITY_LIST_PAGINATION = (
 )
 ACTIVITY_DETAILS_URL = (
     "https://api.nike.com/sport/v3/me/activity/{activity_id}?metrics=ALL"
+)
+DEFAULT_MAX_WORKERS = 10
+
+_session = requests.Session() # parallel downloads reuse connections
+_session.mount(
+    "https://",
+    requests.adapters.HTTPAdapter(
+        max_retries=Retry(
+            total=5,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
+    ),
 )
 
 LOGIN_BTN_CSS = (
@@ -324,17 +340,33 @@ def get_activities_list(options):
 
 def get_activity_details(activity_id, options):
     """
-    Extracts details for a specific activity
+    Extracts details for a specific activity. Returns None if Nike did not
+    return a usable activity (rate limiting, transient errors, missing data).
     """
 
     info(f"Getting activity details for {activity_id}")
     headers = {
         "Authorization": f"Bearer {options['access_token']}",
     }
-    html = requests.get(
-        ACTIVITY_DETAILS_URL.format(activity_id=activity_id), headers=headers
-    )
-    return html.json()
+    try:
+        response = _session.get(
+            ACTIVITY_DETAILS_URL.format(activity_id=activity_id),
+            headers=headers,
+            timeout=30,
+        )
+        details = response.json()
+    except (requests.RequestException, JSONDecodeError) as exc:
+        warning(f"Could not fetch activity {activity_id}: {exc}")
+        return None
+
+    if "id" not in details:
+        warning(
+            f"Skipping activity {activity_id}: Nike returned "
+            f"HTTP {response.status_code} without activity data "
+            f"({details.get('error_id') or details})"
+        )
+        return None
+    return details
 
 
 def save_activity(activity_json, activity_id):
@@ -533,6 +565,10 @@ def arg_parser():
         "-i", "--input", nargs='+', help="A directory or directories containing NRC activities in JSON format."
         "You can also provide individual NRC JSON files"
     )
+    ap.add_argument(
+        "-w", "--workers", type=int, default=DEFAULT_MAX_WORKERS,
+        help=f"parallel activity downloads (default: {DEFAULT_MAX_WORKERS})"
+    )
     args = ap.parse_args()
 
     if args.verbose:
@@ -547,6 +583,7 @@ def arg_parser():
     options = {}
     options["debug"] = args.verbose
     options["manual"] = False
+    options["workers"] = args.workers
     if args.input:
         if all([os.path.exists(i) for i in args.input]):
             options["activities_dirs"] = args.input
@@ -610,25 +647,41 @@ def main():
 
     if options.get("access_token"):
         activity_ids = get_activities_list(options)
-        for activity in activity_ids:
-            activity_details = get_activity_details(activity, options)
-            save_activity(activity_details, activity_details["id"])
+        pending = [
+            a
+            for a in activity_ids
+            if not os.path.exists(os.path.join(ACTIVITY_FOLDER, f"{a}.json"))
+        ]
+        info(f"⏭  Skipping {len(activity_ids) - len(pending)} already downloaded activities. Delete the .json files to re-download")
+
+        def fetch_and_save(activity_id):
+            details = get_activity_details(activity_id, options)
+            if details is None:
+                return False
+            save_activity(details, details["id"])
+            return True
+
+        with ThreadPoolExecutor(max_workers=options.get("workers", DEFAULT_MAX_WORKERS)) as pool:
+            results = list(pool.map(fetch_and_save, pending))
+        failed = results.count(False)
+        if failed:
+            warning(f"{failed} of {len(pending)} downloads failed; re-run to retry them")
 
     activity_folders = options.get("activities_dirs", [ACTIVITY_FOLDER])
     activity_files = options.get("activities_files", [])
     if not activity_files:
         for folder in activity_folders:
-            # add path to every file in folder
-            activity_files.extend([os.path.join(folder, f) for f in os.listdir(folder)])
+            activity_files.extend(sorted(glob.glob(os.path.join(folder, "*.json"))))
         info(f"Parsing activity JSON files from the {','.join(activity_folders)} folders")
 
     total_parsed_count = 0
     for file_path in activity_files:
-        with open(file_path, "r") as f:
-            try:
+        try:
+            with open(file_path, "r") as f:
                 json_data = json.loads(f.read())
-            except JSONDecodeError:
-                error(f"Error occured while parsing file {file_path}")
+        except (JSONDecodeError, UnicodeDecodeError, OSError) as exc:
+            error(f"Error occured while parsing file {file_path}: {exc}")
+            continue
         debug(f"Parsing file: {file_path}")
         parsed_data = parse_activity_data(json_data)
         if parsed_data:
