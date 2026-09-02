@@ -345,6 +345,87 @@ def save_activity(activity_json, activity_id):
         f.write(json.dumps(activity_json))
 
 
+def build_elevation_series(ascent_data, descent_data):
+    """
+    Rebuilds an elevation profile out of NRC's ascent and descent metrics.
+
+    NRC never reports absolute altitude, only elevation gained and lost per
+    interval.
+
+    Args:
+        ascent_data: a list of NRC ascent value dicts, or None
+        descent_data: a list of NRC descent value dicts, or None
+
+    Returns:
+        elevation_data: a list of value dicts shaped like an NRC metric, or None
+    """
+
+    deltas = []
+    if ascent_data:
+        for value, increment in zip(ascent_data, _to_increments(ascent_data, "ascent")):
+            deltas.append((value["end_epoch_ms"], value["start_epoch_ms"], increment))
+    if descent_data:
+        for value, increment in zip(
+            descent_data, _to_increments(descent_data, "descent")
+        ):
+            deltas.append((value["end_epoch_ms"], value["start_epoch_ms"], -increment))
+
+    if not deltas:
+        return None
+
+    deltas.sort()
+
+    elevation_data = []
+    altitude = 0.0
+    for end_epoch_ms, start_epoch_ms, delta in deltas:
+        altitude += delta
+        elevation_data.append(
+            {
+                "start_epoch_ms": start_epoch_ms,
+                "end_epoch_ms": end_epoch_ms,
+                "value": altitude,
+            }
+        )
+
+    offset = min(v["value"] for v in elevation_data)
+    if offset < 0:
+        for v in elevation_data:
+            v["value"] -= offset
+
+    debug(
+        f"\tRebuilt {len(elevation_data)} elevation points, "
+        f"range {min(v['value'] for v in elevation_data):.1f}m - "
+        f"{max(v['value'] for v in elevation_data):.1f}m"
+    )
+    return elevation_data
+
+
+def _to_increments(values, name):
+    """
+    NRC sends `ascent`/`descent` as per-interval gain/loss
+
+    Args:
+        values: a list of NRC metric value dicts
+        name: the metric name, for logging
+
+    Returns:
+        increments: a list of per-interval increments, one per input value
+    """
+
+    numbers = [float(v["value"]) for v in values]
+    is_cumulative = (
+        len(numbers) > 2
+        and numbers[-1] > numbers[0]
+        and all(b >= a for a, b in zip(numbers, numbers[1:]))
+    )
+    if not is_cumulative:
+        debug(f"\t{name} metric read as per-interval increments")
+        return numbers
+    # a series that only ever grows is already a running total
+    debug(f"\t{name} metric looks cumulative, differencing it")
+    return [numbers[0]] + [b - a for a, b in zip(numbers, numbers[1:])]
+
+
 def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rate_data):
     """
     Parses the latitude, longitude and elevation data to generate a GPX document
@@ -385,11 +466,12 @@ def generate_gpx(title, latitude_data, longitude_data, elevation_data, heart_rat
         """
         counter = 0
         for p in points:
-            while p["start_time"] >= update_data[counter]["end_epoch_ms"]:
-                if counter == len(update_data) - 1:
-                    break
-                p[update_name] = update_data[counter]["value"]
+            while (
+                counter < len(update_data) - 1
+                and p["start_time"] >= update_data[counter]["end_epoch_ms"]
+            ):
                 counter += 1
+            p[update_name] = update_data[counter]["value"]
 
 
     for lat, lon in zip(latitude_data, longitude_data):
@@ -441,6 +523,7 @@ def parse_activity_data(activity):
     lat_index = None
     lon_index = None
     ascent_index = None
+    descent_index = None
     heart_rate_index = None
     if not activity.get("metrics"):
         warning(
@@ -454,13 +537,15 @@ def parse_activity_data(activity):
             lon_index = i
         if metric["type"] == "ascent":
             ascent_index = i
+        if metric["type"] == "descent":
+            descent_index = i
         if metric["type"] == "heart_rate":
             heart_rate_index = i
 
     debug(
         f"\tActivity {activity['id']} contains the following metrics: {activity['metric_types']}"
     )
-    if not any([lat_index, lon_index]):
+    if lat_index is None or lon_index is None:
         warning(
             f"\tThe activity {activity['id']} doesn't contain latitude/longitude information"
         )
@@ -468,12 +553,17 @@ def parse_activity_data(activity):
 
     latitude_data = activity["metrics"][lat_index]["values"]
     longitude_data = activity["metrics"][lon_index]["values"]
-    elevation_data = None
+    ascent_data = None
+    descent_data = None
     heart_rate_data = None
-    if ascent_index:
-        elevation_data = activity["metrics"][ascent_index]["values"]
-    if heart_rate_index:
+    if ascent_index is not None:
+        ascent_data = activity["metrics"][ascent_index]["values"]
+    if descent_index is not None:
+        descent_data = activity["metrics"][descent_index]["values"]
+    if heart_rate_index is not None:
         heart_rate_data = activity["metrics"][heart_rate_index]["values"]
+
+    elevation_data = build_elevation_series(ascent_data, descent_data)
 
     title = activity.get("tags", {}).get("com.nike.name", "")
 

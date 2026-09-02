@@ -193,7 +193,7 @@ Now copy these `access_tokens` and provide them to the program.
 
 This was a weekend project so there are definitely a lot of rough edges to this script. Try it at your own risk. I have extracted my runs successfully with this program so I am hopeful that it will work for you too. In case it fails please open up an issue and I will take a look.
 
-For now, one major isssue is that the script does not correctly add elevation data to the GPX file. NRC provides us with the ascent and descent data of different runs but I am not sure of the math that is required to convert that into actual elevation data. This data wasn't particularly important for me to maintain for historic runs so I did not spend a lot of time on it. You are more than welcome to open up a PR if you know how to do it.
+NRC never reports absolute altitude, only the elevation gained (`ascent`) and lost (`descent`) in each interval, so the exporter integrates those signed deltas into an elevation profile and shifts it so the lowest point sits at 0m. Total ascent, total descent and the shape of the profile are accurate, which is what Strava and Garmin recompute elevation gain from, but the absolute altitudes are relative to the run's lowest point, not to sea level. Recovering true altitude would need an external elevation (DEM) lookup, which this script deliberately does not do.
 
 
 ## :camera: Screenshots
